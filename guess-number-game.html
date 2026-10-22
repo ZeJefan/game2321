@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>猜数字小游戏</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23a855f7' d='M12 2l2.4 6.6L21 9l-5.2 4 1.6 7-5.4-4.2L6.6 20l1.6-7L3 9l6.6-.4z'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#2b1055;
+    --purple:#a855f7;
+    --pink:#ff7ad9;
+    --soft:#7a5bb0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:#fff;
+    min-height:100vh;
+    background:radial-gradient(1200px 800px at 85% -8%, rgba(140,255,200,.16), transparent 60%),
+               radial-gradient(1000px 700px at 5% 110%, rgba(70,140,220,.28), transparent 55%),
+               linear-gradient(160deg,#04060f 0%,#0a1430 45%,#132448 100%);
+    background-attachment:fixed;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  /* 星空点缀层 */
+  .stars{
+    position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,.9), transparent 100%),
+      radial-gradient(1px 1px at 60% 12%, rgba(255,255,255,.8), transparent 100%),
+      radial-gradient(2px 2px at 85% 40%, rgba(255,255,255,.7), transparent 100%),
+      radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.7), transparent 100%),
+      radial-gradient(1.5px 1.5px at 75% 75%, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(1px 1px at 8% 88%, rgba(255,255,255,.7), transparent 100%),
+      radial-gradient(1px 1px at 48% 92%, rgba(255,255,255,.55), transparent 100%),
+      radial-gradient(1.5px 1.5px at 92% 8%, rgba(255,255,255,.8), transparent 100%),
+      radial-gradient(1px 1px at 12% 8%, rgba(255,255,255,.7), transparent 100%);
+    background-repeat:no-repeat;
+  }
+  .stars::after{
+    content:"";position:absolute;width:3px;height:3px;border-radius:50%;
+    background:#fff;filter:blur(1px);
+    top:22%;left:50%;box-shadow:0 0 8px 2px rgba(255,255,255,.8);
+  }
+
+  /* 萤火虫光点层：贴合流萤角色特色（夜晚 + 青绿萤光） */
+  .fireflies{
+    position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(3px 3px at 14% 28%, rgba(190,255,215,.95), transparent 100%),
+      radial-gradient(4px 4px at 33% 66%, rgba(255,235,150,.85), transparent 100%),
+      radial-gradient(3px 3px at 52% 22%, rgba(160,255,200,.9), transparent 100%),
+      radial-gradient(5px 5px at 70% 55%, rgba(200,255,225,.8), transparent 100%),
+      radial-gradient(3px 3px at 86% 30%, rgba(255,240,160,.85), transparent 100%),
+      radial-gradient(4px 4px at 22% 85%, rgba(170,255,210,.9), transparent 100%),
+      radial-gradient(3px 3px at 45% 45%, rgba(190,255,220,.85), transparent 100%),
+      radial-gradient(4px 4px at 64% 82%, rgba(255,230,150,.8), transparent 100%),
+      radial-gradient(3px 3px at 90% 78%, rgba(170,255,205,.85), transparent 100%),
+      radial-gradient(5px 5px at 8% 60%, rgba(200,255,220,.8), transparent 100%);
+    background-repeat:no-repeat;
+    filter:blur(.4px);
+    animation:flicker 4s ease-in-out infinite;
+  }
+  .fireflies::after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(50% 40% at 78% 22%, rgba(150,255,205,.10), transparent 70%),
+               radial-gradient(45% 40% at 18% 75%, rgba(190,255,220,.08), transparent 70%);
+  }
+  @keyframes flicker{
+    0%,100%{opacity:.5}
+    50%{opacity:1}
+  }
+
+  .music-btn{
+    position:fixed;top:16px;right:16px;z-index:5;
+    width:48px;height:48px;border:none;border-radius:50%;
+    background:rgba(255,255,255,.16);
+    backdrop-filter:blur(4px);
+    color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    transition:transform .12s ease;
+  }
+  .music-btn:active{transform:scale(.94)}
+  .music-btn svg{width:25px;height:25px}
+  .music-btn .bar{stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .music-btn.off .bar{opacity:.3}
+
+  .scene{
+    position:relative;z-index:1;width:100%;max-width:460px;
+    display:flex;flex-direction:column;align-items:center;gap:18px;
+  }
+
+  .panel{
+    width:100%;border-radius:22px;padding:26px 22px;
+    background:rgba(255,255,255,.94);
+    color:var(--ink);
+    box-shadow:0 20px 50px rgba(0,0,0,.35);
+    text-align:center;
+  }
+
+  .title{
+    font-size:30px;font-weight:800;letter-spacing:2px;
+    background:linear-gradient(120deg,var(--purple),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{
+    margin-top:8px;font-size:15px;color:var(--soft);
+  }
+
+  .guess-row{
+    display:flex;gap:10px;margin-top:24px;
+  }
+  .guess-row input{
+    flex:1;min-width:0;
+    height:56px;padding:0 16px;
+    font-size:20px;text-align:center;
+    border:2px solid #e3d8f5;border-radius:14px;outline:none;
+    background:#fbf7ff;color:var(--ink);
+  }
+  .guess-row input:focus{border-color:var(--purple)}
+  .guess-row input::placeholder{color:#b7a6d6;font-size:15px}
+  .guess-row button{
+    width:88px;height:56px;border:none;border-radius:14px;cursor:pointer;
+    font-size:18px;font-weight:700;color:#fff;
+    background:linear-gradient(135deg,var(--purple),var(--pink));
+    box-shadow:0 6px 16px rgba(168,85,247,.35);
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  .guess-row button:active{transform:scale(.96)}
+  .guess-row button:disabled{opacity:.55;cursor:not-allowed}
+
+  .feedback{
+    margin-top:18px;min-height:26px;
+    font-size:16px;font-weight:600;color:var(--purple);
+  }
+  .attempts{margin-top:6px;font-size:13px;color:var(--soft)}
+
+  .reset{
+    margin-top:18px;padding:0 22px;height:46px;
+    border:1.5px solid #d9c9f3;border-radius:12px;background:#fff;
+    color:var(--purple);font-size:15px;font-weight:600;cursor:pointer;
+  }
+  .reset:active{background:#f3ecff}
+
+  /* ===== 奖励视图 ===== */
+  .reward-panel{
+    color:var(--ink);
+  }
+  .reward-title{
+    font-size:26px;font-weight:800;line-height:1.4;
+  }
+  .reward-title .hi{
+    background:linear-gradient(120deg,var(--purple),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .reward-panel .stats{margin-top:8px;font-size:14px;color:var(--soft)}
+  .reward-card{
+    margin:18px auto 0;position:relative;
+    width:100%;max-width:330px;border-radius:18px;overflow:hidden;
+    box-shadow:0 12px 34px rgba(168,85,247,.35);
+    border:3px solid rgba(255,255,255,.6);
+  }
+  .reward-card img{
+    display:none;width:100%;height:auto;
+  }
+  .reward-card img.active{display:block}
+  .reward-card::after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(60% 50% at 50% 0%, rgba(255,255,255,.28), transparent 70%);
+  }
+  .reward-btn{
+    margin-top:20px;width:100%;height:54px;border:none;border-radius:14px;
+    font-size:17px;font-weight:700;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--purple),var(--pink));
+    box-shadow:0 8px 20px rgba(168,85,247,.35);
+  }
+  .reward-btn:active{transform:scale(.97)}
+
+  [hidden]{display:none!important}
+  @media (min-width:768px){
+    .title{font-size:34px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<div class="fireflies" aria-hidden="true"></div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<button class="music-btn off" id="musicBtn" aria-label="背景音乐开关">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
+    <path class="bar" d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/>
+    <path class="bar" d="M18 7.5a7 7 0 0 1 0 9"/>
+  </svg>
+</button>
+
+<div class="scene">
+  <!-- ===== 游戏视图 ===== -->
+  <section class="panel" id="gameView">
+    <h1 class="title">猜数字小游戏</h1>
+    <p class="sub">心里想好一个数字，来猜猜看 1 ~ 100 之间的答案</p>
+
+    <div class="guess-row">
+      <input id="numInput" type="number" inputmode="numeric" min="1" max="100" placeholder="输入 1~100" autocomplete="off">
+      <button id="guessBtn">猜</button>
+    </div>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+    <div class="attempts" id="attempts"></div>
+
+    <button class="reset" id="resetBtn" hidden>重新开始</button>
+  </section>
+
+  <!-- ===== 奖励视图 ===== -->
+  <section class="panel reward-panel" id="rewardView" hidden>
+    <h2 class="reward-title"><span class="hi">恭喜你答对了</span><br>奖励你这个</h2>
+    <p class="stats" id="stats"></p>
+    <div class="reward-card">
+      <img src="reward.jpg" alt="奖励图片">
+      <img src="liuying1.jpg" alt="奖励图片">
+      <img src="liuying2.jpg" alt="奖励图片">
+      <img src="liuying3.jpg" alt="奖励图片">
+      <img src="liuying4.jpg" alt="奖励图片">
+      <img src="liuying5.jpg" alt="奖励图片">
+      <img src="liuying6.jpg" alt="奖励图片">
+    </div>
+    <button class="reward-btn" id="againBtn">再玩一次</button>
+  </section>
+</div>
+
+<script>
+(function(){
+  // ===== 背景音乐：全程循环 =====
+  var bgm = document.getElementById('bgm');
+  var musicBtn = document.getElementById('musicBtn');
+  var musicOn = false;
+  function tryPlay(){
+    var p = bgm.play();
+    if(p){
+      p.then(function(){ musicOn = true; musicBtn.classList.remove('off'); })
+       .catch(function(){ musicOn = false; });
+    }
+  }
+  musicBtn.addEventListener('click', function(){
+    if(musicOn){ bgm.pause(); musicOn = false; musicBtn.classList.add('off'); }
+    else { tryPlay(); }
+  });
+  tryPlay();
+  // 浏览器限制自动播放，首次交互时兜底启动
+  var unlocked = false;
+  function unlock(){
+    if(unlocked) return;
+    unlocked = true;
+    if(!musicOn){ tryPlay(); }
+  }
+  document.addEventListener('touchstart', unlock, {passive:true});
+  document.addEventListener('click', unlock);
+
+  // ===== 游戏逻辑 =====
+  var gameView = document.getElementById('gameView');
+  var rewardView = document.getElementById('rewardView');
+  var numInput = document.getElementById('numInput');
+  var guessBtn = document.getElementById('guessBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var againBtn = document.getElementById('againBtn');
+  var feedback = document.getElementById('feedback');
+  var attemptsEl = document.getElementById('attempts');
+  var stats = document.getElementById('stats');
+
+  var target = 0;
+  var count = 0;
+  var gameOver = false;
+
+  function newGame(){
+    target = Math.floor(Math.random()*100) + 1; // 1~100
+    count = 0;
+    gameOver = false;
+    feedback.textContent = '';
+    attemptsEl.textContent = '';
+    numInput.value = '';
+    numInput.disabled = false;
+    guessBtn.disabled = false;
+    resetBtn.hidden = true;
+    gameView.hidden = false;
+    rewardView.hidden = true;
+    numInput.focus();
+  }
+
+  function guess(){
+    if(gameOver) return;
+    var val = parseInt(numInput.value, 10);
+    if(isNaN(val)){ feedback.textContent = '请输入一个数字'; return; }
+    if(val < 1 || val > 100){ feedback.textContent = '请输入 1~100 之间的数字'; return; }
+    count++;
+    if(val === target){
+      gameOver = true;
+      numInput.disabled = true;
+      guessBtn.disabled = true;
+      // 随机抽取一张流萤奖励图
+      var imgs = document.querySelectorAll('#rewardView .reward-card img');
+      var pick = Math.floor(Math.random() * imgs.length);
+      for(var i=0;i<imgs.length;i++){ imgs[i].classList.toggle('active', i===pick); }
+      stats.textContent = '你用了 ' + count + ' 次就猜中了，运气不错';
+      gameView.hidden = true;
+      rewardView.hidden = false;
+      return;
+    }
+    feedback.textContent = val < target ? '第 ' + count + ' 次：小了，再大一点' : '第 ' + count + ' 次：大了，再小一点';
+    attemptsEl.textContent = '已猜 ' + count + ' 次';
+    numInput.value = '';
+    numInput.focus();
+  }
+
+  guessBtn.addEventListener('click', guess);
+  numInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') guess(); });
+  resetBtn.addEventListener('click', newGame);
+  againBtn.addEventListener('click', newGame);
+
+  newGame();
+})();
+</script>
+</body>
+</html>
