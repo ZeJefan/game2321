@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜数字小游戏</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #2b1055, #7597de); /* 配合图片的星空紫蓝色调 */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #ddd;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        input[type="number"] {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            width: 120px;
+            outline: none;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #00d2ff;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0099cc;
+        }
+
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 24px;
+            margin-top: 20px;
+            color: #ffdd57;
+        }
+
+        /* 奖励区域的样式 */
+        #reward-area {
+            display: none; /* 默认隐藏 */
+            margin-top: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        #reward-area h2 {
+            color: #ff9ecd;
+            text-shadow: 0 0 10px rgba(255, 158, 205, 0.5);
+        }
+
+        #reward-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-top: 15px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reset-btn {
+            background-color: #ff6b6b;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .reset-btn:hover {
+            background-color: #ee5253;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>🎮 猜数字小游戏</h1>
+        <p>我已经想好了一个 1 到 100 之间的数字，你能猜到吗？</p>
+
+        <div id="play-area">
+            <div class="input-group">
+                <input type="number" id="guessInput" placeholder="输入数字" min="1" max="100">
+                <button id="guessBtn">猜一猜</button>
+            </div>
+            <p id="message"></p>
+        </div>
+
+        <!-- 奖励区域 -->
+        <div id="reward-area">
+            <h2>恭喜你答对了奖励你这个！</h2>
+            <!-- 注意：请确保图片与HTML文件在同一目录，并命名为 reward.jpg -->
+            <img id="reward-image" src="reward.jpg" alt="奖励图片">
+            <br>
+            <button class="reset-btn" id="resetBtn">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏变量
+        let targetNumber = Math.floor(Math.random() * 100) + 1; // 1-100的随机数
+        let attempts = 0;
+
+        // 获取DOM元素
+        const guessInput = document.getElementById('guessInput');
+        const guessBtn = document.getElementById('guessBtn');
+        const messageEl = document.getElementById('message');
+        const playArea = document.getElementById('play-area');
+        const rewardArea = document.getElementById('reward-area');
+        const resetBtn = document.getElementById('resetBtn');
+        const rewardImage = document.getElementById('reward-image');
+
+        // 监听猜测按钮点击事件
+        guessBtn.addEventListener('click', checkGuess);
+
+        // 监听回车键
+        guessInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                checkGuess();
+            }
+        });
+
+        // 监听再玩一次按钮
+        resetBtn.addEventListener('click', resetGame);
